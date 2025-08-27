@@ -41,6 +41,11 @@ class TechnicalAnalysis:
             self.high_price = pd.Series(high_price) if not isinstance(high_price, pd.Series) else high_price
             self.low_price = pd.Series(low_price) if not isinstance(low_price, pd.Series) else low_price
             self.volume = pd.Series(volume) if not isinstance(volume, pd.Series) else volume
+            data[open_col] = self.open_price
+            data[close_col] = self.close_price
+            data[high_col] = self.high_price
+            data[low_col] = self.low_price
+            data[volume_col] = self.volume
         
     def cal_bollinger_bands(self, window=20, num_std=2):
         """
@@ -141,6 +146,16 @@ class TechnicalAnalysis:
         return 100 - 100 / (1 + self.cal_rs(windows))
     
 
+    def cal_atr(self, windows=14):
+        '''
+        Volatility of the current market.
+        The higher the value, the more volatile it is currently.
+        Suitable for risk management.
+        '''
+        # Calculate True Range (TR)
+        tr = self.data.apply(lambda row: max(row['High'] - row['Low'], abs(row['High'] - self.data['Close'].shift(1).loc[row.name]), abs(row['Low'] - self.data['Close'].shift(1).loc[row.name])), axis=1)
+        return tr.rolling(window=windows).mean()
+
     def plot_ma(self):
         """
         绘制移动平均线图
@@ -189,10 +204,9 @@ class TechnicalAnalysis:
         """
         绘制MACD图
         """
-        short_ema, long_ema, macd, signal = self.cal_macd()
-        histogram = macd - signal
+        _, _, macd, signal = self.cal_macd()
         
-        fig, ax = plt.subplots(figsize=(12, 6))
+        _, ax = plt.subplots(figsize=(12, 6))
         
         macd.plot(ax=ax, label='MACD')
         signal.plot(ax=ax, label='Signal')
@@ -230,7 +244,7 @@ class TechnicalAnalysis:
         fig.show()
 
     def plot_rsi(self):
-        fig, ax = plt.subplots(figsize=(12, 6))
+        _, ax = plt.subplots(figsize=(12, 6))
         rsi = self.cal_rsi()
         
         rsi.plot(ax=ax, label='RSI(Relative Strength Index)')
