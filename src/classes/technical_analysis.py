@@ -49,6 +49,7 @@ class TechnicalAnalysis:
         Args:
             window: 移动平均窗口期，默认20
             num_std: 标准差倍数，默认2
+            查找正态分布的置信区间、num_std = 2相当于95.5%左右
             
         Returns:
             tuple: (rolling_mean, upper_band, lower_band)
@@ -113,47 +114,33 @@ class TechnicalAnalysis:
         
         return average_volume, relative_volume
     
-    def get_all_indicators(self):
+    def cal_rs(self, windows=14):
         """
-        获取所有技术指标
-        
+        计算相对动力(Relative Strength) = average gain / average loss
+        Args:
+            window: 计算平均量的窗口期
         Returns:
-            dict: 包含所有指标的字典
+            float: rs
         """
-        # 布林带
-        bb_mean, bb_upper, bb_lower = self.cal_bollinger_bands()
-        
-        # 移动平均线
-        ma50, ma200 = self.cal_ma()
-        
-        # MACD
-        short_ema, long_ema, macd, signal = self.cal_macd()
-        
-        # 成交量指标
-        avg_volume, rel_volume = self.cal_volume()
-        
-        return {
-            'bollinger_bands': {
-                'middle': bb_mean,
-                'upper': bb_upper, 
-                'lower': bb_lower
-            },
-            'moving_averages': {
-                'ma50': ma50,
-                'ma200': ma200
-            },
-            'macd': {
-                'short_ema': short_ema,
-                'long_ema': long_ema,
-                'macd': macd,
-                'signal': signal
-            },
-            'volume': {
-                'average_volume': avg_volume,
-                'relative_volume': rel_volume
-            }
-        }
+        diff = self.close_price.diff()
+        gain = diff.mask(diff < 0, 0)
+        loss = -diff.mask(diff > 0, 0)
+        avg_gain = gain.ewm(com=windows - 1, min_periods=windows).mean()
+        avg_loss = loss.ewm(com=windows - 1, min_periods=windows).mean()
+        rs = avg_gain / avg_loss
+        return rs
     
+    def cal_rsi(self,windows=14):
+        """
+        计算相对动力指数(Relative Strength Index) = 100 - 100/(1 + RS)
+        Args:
+            window: 计算平均量的窗口期
+        Returns:
+
+        """
+        return 100 - 100 / (1 + self.cal_rs(windows))
+    
+
     def plot_ma(self):
         """
         绘制移动平均线图
@@ -241,3 +228,19 @@ class TechnicalAnalysis:
 
         # Show plot
         fig.show()
+
+    def plot_rsi(self):
+        fig, ax = plt.subplots(figsize=(12, 6))
+        rsi = self.cal_rsi()
+        
+        rsi.plot(ax=ax, label='RSI(Relative Strength Index)')
+        
+        ax.set_title('RSI(Relative Strength Index)')
+        ax.set_xlabel('Date')
+        ax.set_ylabel('RSI')
+        ax.legend()
+        plt.xticks(rotation=45)
+        plt.tight_layout()
+        # Highlight the area between 30 and 70
+        ax.axhspan(30, 70, color='gray', alpha=0.2, label='30-70 Range')
+        plt.show()

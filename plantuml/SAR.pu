@@ -1,0 +1,37 @@
+@startuml
+participant "Metaplanet Inc." as Metaplanet
+participant "EVO FUND" as EVOFund
+
+' 债券发行与支付
+Metaplanet -> EVOFund: Issue 19th Series Bonds\n(300B JPY, 2025-06-30)
+activate EVOFund
+
+EVOFund -> Metaplanet: Pay for Bonds (Funds)\n(Metaplanet receives cash)
+deactivate EVOFund
+
+' Metaplanet内部操作
+note right of Metaplanet: Internal: Use funds to buy BTC
+
+' 分配权利
+Metaplanet -> EVOFund: Allocate 20-22 Series Rights\n(1.85M units total, 2025-06-23)
+activate EVOFund
+
+' 部分行使权利
+EVOFund -> Metaplanet: Exercise Rights (Partial)\n(e.g., 49K units of 20th Series\nPay at 972/884 JPY/share\n2025-08-18~22)
+deactivate EVOFund
+
+' 发行新股
+Metaplanet -> EVOFund: Issue New Shares\n(e.g., 4.9M shares\nincreases total shares to 722M)
+
+' 部分债券赎回
+Metaplanet -> EVOFund: Partial Bond Redemption\n(e.g., 30B JPY additional\nfrom exercise funds)
+
+' 循环过程
+loop Continue exercising, buying BTC, and redeeming
+    EVOFund -> Metaplanet: Exercise Additional Rights
+    note right of Metaplanet: Use funds to buy BTC
+    Metaplanet -> EVOFund: Issue Corresponding Shares
+    Metaplanet -> EVOFund: Redeem Additional Bonds
+end
+
+@enduml
